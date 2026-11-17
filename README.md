@@ -1,4 +1,5 @@
-# Library Management System (Updated)
+<<<<<<< HEAD
+# Library Management System 
 
 A console-based Java Library Management System using a layered package structure.
 
@@ -56,3 +57,7 @@ The console currently waits for the submitted report using `Future.get()` so it 
 
 ## Important implementation note
 This project stores data in memory (`ArrayList` and `HashMap`). Data is reset when the application exits. Passwords are stored as plain text in this educational project; a real deployment should use password hashing and persistent database storage.
+=======
+# Library-Management-System
+This the Project file of Library Management System.
+>>>>>>> 72d729ea35343e8586efc4ef1f87ee8662384fb2
