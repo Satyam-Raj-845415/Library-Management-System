@@ -1,63 +1,150 @@
-<<<<<<< HEAD
-# Library Management System 
+# Library Management System
 
-A console-based Java Library Management System using a layered package structure.
+A console-based **Library Management System** written in **Java**. Students can register, log in, browse and search a catalogue of books, issue and return them, and keep track of what they currently have borrowed. 
+
 
 ## Features
-- Student registration and login
-- View and search books
-- Issue and return books
-- View issued/pending books and open their reference URLs
-- Edit student profile
-- Generate an inventory report on a background worker thread
-- Custom exceptions for expected business-rule failures
-- Synchronized book operations and repository access for shared in-memory data
 
-## Package structure
-- `com.library` — application entry point (`Main`)
-- `com.library.cli` — console menus and user interaction (`LibraryCLI`)
-- `com.library.service` — business logic, interface, and background task manager
-- `com.library.repository` — in-memory book and user storage
-- `com.library.model` — `Person`, `User`, and `Book`
-- `com.library.exception` — custom library exceptions
+- **Student accounts**: register a new account or log in to an existing one
+- **Browse books**: view the full catalogue with ID, title, author, category, and availability status
+- **Search**: find a book by its exact title (case-insensitive)
+- **Issue a book**: borrow any available book; the system prevents two people from holding the same copy
+- **Return a book**: return only the books that are issued to *your* account
+- **Pending books**: see everything you currently have issued and open its reference link in your web browser
+- **Edit profile**: update your name, email, student ID, course, or password (leave a field blank to keep the current value)
+- **Inventory report**: generate a summary (total / available / issued) on a **background worker thread**
+- **Friendly error messages**: expected problems (unknown book, book already issued, duplicate email, bad input) are reported clearly instead of crashing the program
 
-## Requirements
-JDK 8 or later.
 
-## Compile
-From the directory containing the `com` folder:
+## Concepts Demonstrated
 
-```bash
-javac -d out $(find com -name "*.java")
+| Concept | Where it appears |
+|---|---|
+| **Inheritance** | `User` extends the abstract `Person` class |
+| **Abstraction** | `Person` declares an abstract `getRole()` method; `BookOperations` is an interface that hides implementation details |
+| **Polymorphism** | `User` overrides `getRole()` (runtime); `BookService.findBook(int)` and `findBook(String)` are overloaded (compile-time) |
+| **Encapsulation** | Private fields with getters/setters in `Book`, `User`, and `Person` |
+| **Static members** | `Book.totalBooksCreated` counts every `Book` object created |
+| **Programming to an interface** | `LibraryCLI` talks to `BookOperations`, not to the concrete `BookService` |
+| **Dependency injection** | `Main` creates the repositories and services and passes them in through constructors |
+| **Layered architecture** | Separate packages for CLI, services, repositories, models, and exceptions |
+| **Custom exceptions** | A `LibraryException` hierarchy for business-rule failures |
+| **Collections & Streams** | `ArrayList`, `HashMap`, and stream filtering in the repositories and report task |
+| **Multithreading** | `ExecutorService` thread pool, `Callable`, and `Future` in `BackgroundTaskManager` |
+| **Synchronization** | `synchronized` methods protect shared in-memory data and make issue/return atomic |
+
+---
+
+## Architecture
+
+The application is split into layers. Each layer only talks to the layer directly below it.
+
+```
+┌──────────────────────────────────────────────┐
+│  CLI layer          LibraryCLI               │  menus, input, output
+└──────────────────────┬───────────────────────┘
+                       │
+┌──────────────────────▼───────────────────────┐
+│  Service layer      AuthService              │  business rules
+│                     BookService              │
+│                       (implements            │
+│                        BookOperations)       │
+│                     UserService              │
+│                     BackgroundTaskManager    │
+└──────────────────────┬───────────────────────┘
+                       │
+┌──────────────────────▼───────────────────────┐
+│  Repository layer   BookRepository           │  in-memory storage
+│                     UserRepository           │
+└──────────────────────┬───────────────────────┘
+                       │
+┌──────────────────────▼───────────────────────┐
+│  Model layer        Person ◄── User          │  data objects
+│                     Book                     │
+└──────────────────────────────────────────────┘
+
+---
+
+## Project Structure
+
+```
+library_oops_updated/
+├── README.md
+└── com/library/
+    ├── Main.java                         # Application entry point
+    ├── cli/
+    │   └── LibraryCLI.java               # Console menus and user interaction
+    ├── service/
+    │   ├── AuthService.java              # Login, logout, registration, current session
+    │   ├── BookOperations.java           # Interface for book-related operations
+    │   ├── BookService.java              # Issue / return / search logic
+    │   ├── UserService.java              # Profile updates
+    │   └── BackgroundTaskManager.java    # Thread pool for background tasks
+    ├── repository/
+    │   ├── BookRepository.java           # In-memory book storage (ArrayList)
+    │   └── UserRepository.java           # In-memory user storage (HashMap)
+    ├── model/
+    │   ├── Person.java                   # Abstract parent class
+    │   ├── User.java                     # Student account (extends Person)
+    │   └── Book.java                     # Book record
+    └── exception/
+        ├── LibraryException.java         # Base unchecked exception
+        ├── BookNotFoundException.java
+        ├── BookUnavailableException.java
+        ├── BookNotIssuedToUserException.java
+        ├── DuplicateUserException.java
+        └── InvalidLibraryInputException.java
 ```
 
-## Run
 
-```bash
-java -cp out com.library.Main
+### Demo account
+
+| Field | Value |
+|---|---|
+| Email | `student@gmail.com` |
+| Password | `12345` |
+
+You can also choose **Register** from the first menu to create your own account.
+
+---
+
+
+Initializing Library System...
+
+=== LIBRARY MANAGEMENT SYSTEM ===
+1. Login
+2. Register
+3. Exit
+Choose an option: 1
+Email: student@gmail.com
+Password: 12345
+Login successful! Welcome Demo Student
+
+Choose an option: 2
+Enter Book ID to issue: 3
+Book issued successfully!
+
+Choose an option: 2
+Enter Book ID to issue: 3
+Operation failed: Book 3 is not currently available.
+
+Choose an option: 8
+Submitting inventory report to a background worker...
+Inventory report generated by library-worker-1
+Total books: 17
+Available: 16
+Issued: 1
+
+Choose an option: 7
+Enter exact book title: Clean Code
+Found: Clean Code by Robert C. Martin | Status: Available
+
+Choose an option: 3
+--- YOUR ISSUED BOOKS ---
+3: Data Structures and Algorithms
+Enter Book ID to return: 3
+Book returned successfully!
+
+Choose an option: 6
+Logged out.
 ```
-
-Demo account:
-- Email: `student@gmail.com`
-- Password: `12345`
-
-After login, choose option `8` to generate the inventory report using `ExecutorService` on a worker thread.
-
-## Multithreading design
-`BackgroundTaskManager` owns a fixed thread pool and submits the inventory-report task as a `Callable<String>`. The task runs on a named `library-worker-*` thread and returns its report through a `Future<String>`. `Main` closes the task manager when the CLI exits. `BookService` synchronizes the issue/return check-and-update operations, while repository methods synchronize access to the in-memory collections.
-
-The console currently waits for the submitted report using `Future.get()` so it can display the completed result. The work itself executes on a worker thread; this is a simple, observable introduction to Java concurrency without introducing concurrent console input/output.
-
-## Exception handling design
-- `LibraryException` is the base unchecked exception for expected library-domain failures.
-- `BookNotFoundException`, `BookUnavailableException`, `BookNotIssuedToUserException`, `DuplicateUserException`, and `InvalidLibraryInputException` communicate specific failures.
-- `LibraryCLI` catches domain exceptions at the user-interface boundary and displays understandable messages.
-- Invalid numeric IDs are handled separately with `NumberFormatException`.
-- Background task failures and interruption are handled with `ExecutionException` and `InterruptedException`.
-
-## Important implementation note
-This project stores data in memory (`ArrayList` and `HashMap`). Data is reset when the application exits. Passwords are stored as plain text in this educational project; a real deployment should use password hashing and persistent database storage.
-=======
-# Library-Management-System
-This the Project file of Library Management System.
->>>>>>> 72d729ea35343e8586efc4ef1f87ee8662384fb2
